@@ -1,20 +1,18 @@
 // controllers/usuarios.controller.js
 const Usuario = require('../models/usuario.model.js');
 
-// Obtener todos los usuarios
+// Obtener todos los usuarios (con filtros por tipo)
 const getUsuarios = async (req, res) => {
   try {
-    const { tipo, nombre } = req.query;
+    const { tipo } = req.query; // 👈 leemos el query string
     let usuarios;
 
-    if (tipo) {
-      usuarios = await Usuario.find({ tipo });
-    } else if (nombre) {
-      usuarios = await Usuario.find({ nombre: new RegExp(nombre, 'i') });
-      // Crea una expresión regular a partir de la variable nombre.
-      // La expresión regular con 'i' hace que la búsqueda no distinga entre mayúsculas y minúsculas
+    if (tipo === 'docente') {
+      usuarios = await Usuario.find({ tipo: 'docente' });
+    } else if (tipo === 'alumno') {
+      usuarios = await Usuario.find({ tipo: 'alumno' });
     } else {
-      usuarios = await Usuario.find();
+      usuarios = await Usuario.find(); // si no se pasa nada, trae todos
     }
 
     res.json(usuarios);

@@ -23,6 +23,9 @@ app.use(express.static(path.join(__dirname, 'public')));
 const usuariosRoutes = require('./routes/usuarios.routes.js');
 app.use('/usuarios', usuariosRoutes);
 
+const clasesRoutes = require('./routes/clases.routes.js');
+app.use('/clases', clasesRoutes);
+
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
   console.log(`🚀 Servidor corriendo en http://localhost:${PORT}`);
