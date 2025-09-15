@@ -10,21 +10,27 @@ const crearInscripcion = async (req, res) => {
     let claseInput = req.body.clase;
     let claseDoc;
 
-    // 🔹 Validar alumno (ID o email)
+    // 🔹 Validar alumno (ID, email o nombre)
     if (mongoose.Types.ObjectId.isValid(alumnoId)) {
       const alumno = await Usuario.findOne({ _id: alumnoId, tipo: 'alumno' });
       if (!alumno) return res.status(400).json({ mensaje: 'El alumno no existe o no es válido' });
-    } else {
+    } else if (typeof alumnoId === 'string' && alumnoId.includes('@')) {
       const alumno = await Usuario.findOne({ email: alumnoId, tipo: 'alumno' });
+      if (!alumno) return res.status(400).json({ mensaje: 'El alumno no existe o no es válido' });
+      alumnoId = alumno._id;
+    } else {
+      const alumno = await Usuario.findOne({ nombre: new RegExp(alumnoId.trim(), 'i'), tipo: 'alumno' });
       if (!alumno) return res.status(400).json({ mensaje: 'El alumno no existe o no es válido' });
       alumnoId = alumno._id;
     }
 
-    // 🔹 Validar clase (classCode numérico o ID)
+    // 🔹 Validar clase (classCode numérico, ID o nombre)
     if (typeof claseInput === 'number' || !isNaN(claseInput)) {
       claseDoc = await Clase.findOne({ classCode: parseInt(claseInput) });
     } else if (mongoose.Types.ObjectId.isValid(claseInput)) {
       claseDoc = await Clase.findById(claseInput);
+    } else {
+      claseDoc = await Clase.findOne({ nombre: new RegExp(claseInput.trim(), 'i') });
     }
 
     if (!claseDoc) return res.status(400).json({ mensaje: 'La clase no existe o no es válida' });
@@ -49,60 +55,75 @@ const crearInscripcion = async (req, res) => {
 
     res.status(201).json(await inscripcionGuardada.populate([
       { path: 'alumno', select: 'nombre email tipo' },
-      { path: 'clase', select: 'nombre classCode fecha' }
+      { path: 'clase', select: 'nombre classCode fecha docente', populate: { path: 'docente', select: 'nombre email' } }
     ]));
   } catch (error) {
     res.status(400).json({ mensaje: error.message });
   }
 };
 
-
-// Obtener todas las inscripciones (filtro por alumno o clase)
+// Obtener todas las inscripciones (filtro por alumno, clase o docente)
 const getInscripciones = async (req, res) => {
   try {
-    const { alumno, clase } = req.query;
+    const { alumno, clase, docente } = req.query;
     let filtro = {};
 
-    // 🔹 Filtrar por alumno (ID o email)
+    // 🔹 Filtrar por alumno (ID, email o nombre)
     if (alumno) {
-      let alumnoId = alumno;
-      if (mongoose.Types.ObjectId.isValid(alumnoId)) {
-        const alumnoDoc = await Usuario.findOne({ _id: alumnoId, tipo: 'alumno' });
+      if (mongoose.Types.ObjectId.isValid(alumno)) {
+        const alumnoDoc = await Usuario.findOne({ _id: alumno, tipo: 'alumno' });
         if (!alumnoDoc) return res.status(404).json({ mensaje: 'Alumno no encontrado' });
-        filtro.alumno = alumnoId;
-      } else {
+        filtro.alumno = alumno;
+      } else if (alumno.includes('@')) {
         const alumnoDoc = await Usuario.findOne({ email: alumno, tipo: 'alumno' });
+        if (!alumnoDoc) return res.status(404).json({ mensaje: 'Alumno no encontrado' });
+        filtro.alumno = alumnoDoc._id;
+      } else {
+        const alumnoDoc = await Usuario.findOne({ nombre: new RegExp(alumno.trim(), 'i'), tipo: 'alumno' });
         if (!alumnoDoc) return res.status(404).json({ mensaje: 'Alumno no encontrado' });
         filtro.alumno = alumnoDoc._id;
       }
     }
 
-    // 🔹 Filtrar por clase (classCode numérico o ID)
+    // 🔹 Filtrar por clase (ID, classCode o nombre)
     if (clase) {
-      if (typeof clase === 'number' || !isNaN(clase)) {
-        const claseDoc = await Clase.findOne({ classCode: parseInt(clase) });
-        if (!claseDoc) return res.status(404).json({ mensaje: 'Clase no encontrada' });
-        filtro.clase = claseDoc._id;
-      } else if (mongoose.Types.ObjectId.isValid(clase)) {
-        const claseDoc = await Clase.findById(clase);
-        if (!claseDoc) return res.status(404).json({ mensaje: 'Clase no encontrada' });
-        filtro.clase = clase;
+      let claseDoc;
+      if (mongoose.Types.ObjectId.isValid(clase)) {
+        claseDoc = await Clase.findById(clase);
+      } else if (!isNaN(clase)) {
+        claseDoc = await Clase.findOne({ classCode: parseInt(clase) });
       } else {
-        return res.status(400).json({ mensaje: 'El parámetro clase debe ser un ID válido o un classCode numérico' });
+        claseDoc = await Clase.findOne({ nombre: new RegExp(clase.trim(), 'i') });
       }
+      if (!claseDoc) return res.status(404).json({ mensaje: 'Clase no encontrada' });
+      filtro.clase = claseDoc._id;
+    }
+
+    // 🔹 Filtrar por docente (nombre)
+    if (docente) {
+      const docentes = await Usuario.find({ nombre: new RegExp(docente.trim(), 'i'), tipo: 'docente' });
+      if (!docentes.length) return res.status(404).json({ mensaje: 'Docente no encontrado' });
+
+      const clasesDocente = await Clase.find({ docente: { $in: docentes.map(d => d._id) } });
+      if (!clasesDocente.length) return res.status(404).json({ mensaje: 'No se encontraron clases para este docente' });
+
+      filtro.clase = { $in: clasesDocente.map(c => c._id) };
     }
 
     // Buscar inscripciones con populate
     const inscripciones = await Inscripcion.find(filtro)
       .populate('alumno', 'nombre email tipo')
-      .populate('clase', 'nombre classCode fecha');
+      .populate({
+        path: 'clase',
+        select: 'nombre classCode fecha docente',
+        populate: { path: 'docente', select: 'nombre email' }
+      });
 
     res.json(inscripciones);
   } catch (error) {
     res.status(500).json({ mensaje: error.message });
   }
 };
-
 
 // Eliminar inscripción
 const eliminarInscripcion = async (req, res) => {

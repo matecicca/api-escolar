@@ -49,20 +49,25 @@ const getClases = async (req, res) => {
     const { docente, nombre } = req.query;
     let filtro = {};
 
-    // 🔹 Filtro por docente
+    // 🔹 Filtro por docente (ID, email o nombre)
     if (docente) {
       if (mongoose.Types.ObjectId.isValid(docente)) {
         const existeDocente = await Usuario.findOne({ _id: docente, tipo: 'docente' });
         if (!existeDocente) return res.status(404).json({ mensaje: 'Docente no encontrado' });
         filtro.docente = docente;
-      } else {
+      } else if (docente.includes('@')) {
         const docenteEncontrado = await Usuario.findOne({ email: docente, tipo: 'docente' });
         if (!docenteEncontrado) return res.status(404).json({ mensaje: 'Docente no encontrado' });
         filtro.docente = docenteEncontrado._id;
+      } else {
+        // Buscar por nombre con RegExp
+        const docentes = await Usuario.find({ nombre: new RegExp(docente.trim(), 'i'), tipo: 'docente' });
+        if (!docentes.length) return res.status(404).json({ mensaje: 'Docente no encontrado' });
+        filtro.docente = { $in: docentes.map(d => d._id) };
       }
     }
 
-    // 🔹 Filtro por nombre de clase (case-insensitive, soporta espacios)
+    // 🔹 Filtro por nombre de clase
     if (nombre) {
       filtro.nombre = new RegExp(nombre.trim(), 'i');
     }
