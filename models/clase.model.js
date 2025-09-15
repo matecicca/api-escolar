@@ -12,8 +12,8 @@ const claseSchema = new mongoose.Schema({
     required: [true, 'La descripción es obligatoria']
   },
   docente: {
-    type: mongoose.Schema.Types.ObjectId,   // 👈 Guardamos un ObjectId
-    ref: 'Usuario',                         // 👈 Referencia al modelo Usuario
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Usuario',                         
     required: [true, 'El docente es obligatorio']
   },
   fecha: {

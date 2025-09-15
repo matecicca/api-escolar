@@ -94,7 +94,7 @@ const actualizarClase = async (req, res) => {
   try {
     let docenteId = req.body.docente;
 
-    // 🔹 Validar docente si se envía uno nuevo
+    // Validar docente si se envía uno nuevo
     if (docenteId) {
       if (mongoose.Types.ObjectId.isValid(docenteId)) {
         const docente = await Usuario.findOne({ _id: docenteId, tipo: 'docente' });
@@ -111,7 +111,7 @@ const actualizarClase = async (req, res) => {
       req.body.docente = docenteId;
     }
 
-    // 🔹 Validar que el nuevo classCode no esté repetido
+    // Validar que el nuevo classCode no esté repetido
     if (req.body.classCode) {
       const existeClassCode = await Clase.findOne({
         classCode: req.body.classCode,

@@ -10,7 +10,7 @@ const crearInscripcion = async (req, res) => {
     let claseInput = req.body.clase;
     let claseDoc;
 
-    // 🔹 Validar alumno (ID, email o nombre)
+    // Validar alumno (ID, email o nombre)
     if (mongoose.Types.ObjectId.isValid(alumnoId)) {
       const alumno = await Usuario.findOne({ _id: alumnoId, tipo: 'alumno' });
       if (!alumno) return res.status(400).json({ mensaje: 'El alumno no existe o no es válido' });
@@ -24,7 +24,7 @@ const crearInscripcion = async (req, res) => {
       alumnoId = alumno._id;
     }
 
-    // 🔹 Validar clase (classCode numérico, ID o nombre)
+    // Validar clase (classCode numérico, ID o nombre)
     if (typeof claseInput === 'number' || !isNaN(claseInput)) {
       claseDoc = await Clase.findOne({ classCode: parseInt(claseInput) });
     } else if (mongoose.Types.ObjectId.isValid(claseInput)) {
@@ -35,7 +35,7 @@ const crearInscripcion = async (req, res) => {
 
     if (!claseDoc) return res.status(400).json({ mensaje: 'La clase no existe o no es válida' });
 
-    // 🔹 Evitar inscripciones duplicadas
+    // Evitar inscripciones duplicadas
     const inscripcionExistente = await Inscripcion.findOne({
       alumno: alumnoId,
       clase: claseDoc._id
@@ -45,7 +45,7 @@ const crearInscripcion = async (req, res) => {
       return res.status(400).json({ mensaje: 'El alumno ya está inscripto en esta clase' });
     }
 
-    // 🔹 Crear inscripción
+    // Crear inscripción
     const nuevaInscripcion = new Inscripcion({
       alumno: alumnoId,
       clase: claseDoc._id
@@ -68,7 +68,7 @@ const getInscripciones = async (req, res) => {
     const { alumno, clase, docente } = req.query;
     let filtro = {};
 
-    // 🔹 Filtrar por alumno (ID, email o nombre)
+    // Filtrar por alumno (ID, email o nombre)
     if (alumno) {
       if (mongoose.Types.ObjectId.isValid(alumno)) {
         const alumnoDoc = await Usuario.findOne({ _id: alumno, tipo: 'alumno' });
@@ -85,7 +85,7 @@ const getInscripciones = async (req, res) => {
       }
     }
 
-    // 🔹 Filtrar por clase (ID, classCode o nombre)
+    // Filtrar por clase (ID, classCode o nombre)
     if (clase) {
       let claseDoc;
       if (mongoose.Types.ObjectId.isValid(clase)) {
@@ -99,7 +99,7 @@ const getInscripciones = async (req, res) => {
       filtro.clase = claseDoc._id;
     }
 
-    // 🔹 Filtrar por docente (nombre)
+    // Filtrar por docente (nombre)
     if (docente) {
       const docentes = await Usuario.find({ nombre: new RegExp(docente.trim(), 'i'), tipo: 'docente' });
       if (!docentes.length) return res.status(404).json({ mensaje: 'Docente no encontrado' });

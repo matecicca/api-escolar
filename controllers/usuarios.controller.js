@@ -12,7 +12,7 @@ const getUsuarios = async (req, res) => {
       filtro.tipo = tipo;
     }
 
-    // Filtro por nombre (con soporte a espacios y case-insensitive)
+    // Filtro por nombre
     if (nombre) {
       filtro.nombre = new RegExp(nombre.trim(), 'i');
     }
@@ -35,7 +35,6 @@ const getUsuarioById = async (req, res) => {
   }
 };
 
-// Crear usuario
 const crearUsuario = async (req, res) => {
   try {
     const nuevoUsuario = new Usuario(req.body);
@@ -46,7 +45,6 @@ const crearUsuario = async (req, res) => {
   }
 };
 
-// Actualizar usuario
 const actualizarUsuario = async (req, res) => {
   try {
     const usuario = await Usuario.findByIdAndUpdate(
@@ -61,7 +59,6 @@ const actualizarUsuario = async (req, res) => {
   }
 };
 
-// Eliminar usuario
 const eliminarUsuario = async (req, res) => {
   try {
     const usuario = await Usuario.findByIdAndDelete(req.params.id);
