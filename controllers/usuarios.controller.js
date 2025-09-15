@@ -1,20 +1,23 @@
 // controllers/usuarios.controller.js
 const Usuario = require('../models/usuario.model.js');
 
-// Obtener todos los usuarios (con filtros por tipo)
+// Obtener todos los usuarios (con filtros por tipo y nombre)
 const getUsuarios = async (req, res) => {
   try {
-    const { tipo } = req.query; // 👈 leemos el query string
-    let usuarios;
+    const { tipo, nombre } = req.query;
+    let filtro = {};
 
-    if (tipo === 'docente') {
-      usuarios = await Usuario.find({ tipo: 'docente' });
-    } else if (tipo === 'alumno') {
-      usuarios = await Usuario.find({ tipo: 'alumno' });
-    } else {
-      usuarios = await Usuario.find(); // si no se pasa nada, trae todos
+    // Filtro por tipo
+    if (tipo) {
+      filtro.tipo = tipo;
     }
 
+    // Filtro por nombre (con soporte a espacios y case-insensitive)
+    if (nombre) {
+      filtro.nombre = new RegExp(nombre.trim(), 'i');
+    }
+
+    const usuarios = await Usuario.find(filtro);
     res.json(usuarios);
   } catch (error) {
     res.status(500).json({ mensaje: error.message });
@@ -76,4 +79,3 @@ module.exports = {
   actualizarUsuario,
   eliminarUsuario
 };
-

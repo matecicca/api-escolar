@@ -1,4 +1,3 @@
-
 // controllers/clases.controller.js
 const mongoose = require('mongoose');
 const Usuario = require('../models/usuario.model.js');
@@ -44,44 +43,36 @@ const crearClase = async (req, res) => {
   }
 };
 
-
-
-
-// Obtener todas las clases (con filtro opcional por docente)
+// Obtener todas las clases (con filtros por docente y nombre)
 const getClases = async (req, res) => {
   try {
-    const { docente } = req.query; // 👈 query param: ?docente=<id|email>
-    let clases;
+    const { docente, nombre } = req.query;
+    let filtro = {};
 
+    // 🔹 Filtro por docente
     if (docente) {
-      let docenteId = docente;
-
-      // Caso 1: si es un ObjectId válido
-      if (mongoose.Types.ObjectId.isValid(docenteId)) {
-        const existeDocente = await Usuario.findOne({ _id: docenteId, tipo: 'docente' });
-        if (!existeDocente) {
-          return res.status(404).json({ mensaje: 'Docente no encontrado' });
-        }
-        clases = await Clase.find({ docente: docenteId }).populate('docente', 'nombre email tipo');
+      if (mongoose.Types.ObjectId.isValid(docente)) {
+        const existeDocente = await Usuario.findOne({ _id: docente, tipo: 'docente' });
+        if (!existeDocente) return res.status(404).json({ mensaje: 'Docente no encontrado' });
+        filtro.docente = docente;
       } else {
-        // Caso 2: si es un email
         const docenteEncontrado = await Usuario.findOne({ email: docente, tipo: 'docente' });
-        if (!docenteEncontrado) {
-          return res.status(404).json({ mensaje: 'Docente no encontrado' });
-        }
-        clases = await Clase.find({ docente: docenteEncontrado._id }).populate('docente', 'nombre email tipo');
+        if (!docenteEncontrado) return res.status(404).json({ mensaje: 'Docente no encontrado' });
+        filtro.docente = docenteEncontrado._id;
       }
-    } else {
-      // Si no se pasa parámetro → todas las clases
-      clases = await Clase.find().populate('docente', 'nombre email tipo');
     }
 
+    // 🔹 Filtro por nombre de clase (case-insensitive, soporta espacios)
+    if (nombre) {
+      filtro.nombre = new RegExp(nombre.trim(), 'i');
+    }
+
+    const clases = await Clase.find(filtro).populate('docente', 'nombre email tipo');
     res.json(clases);
   } catch (error) {
     res.status(500).json({ mensaje: error.message });
   }
 };
-
 
 // Obtener una clase por ID con info del docente
 const getClaseById = async (req, res) => {
@@ -119,14 +110,13 @@ const actualizarClase = async (req, res) => {
     if (req.body.classCode) {
       const existeClassCode = await Clase.findOne({
         classCode: req.body.classCode,
-        _id: { $ne: req.params.id } // 👈 excluir la clase que estamos actualizando
+        _id: { $ne: req.params.id }
       });
       if (existeClassCode) {
         return res.status(400).json({ mensaje: `El classCode ${req.body.classCode} ya está en uso` });
       }
     }
 
-    // Actualizar clase
     const clase = await Clase.findByIdAndUpdate(
       req.params.id,
       req.body,
@@ -140,8 +130,6 @@ const actualizarClase = async (req, res) => {
     res.status(400).json({ mensaje: error.message });
   }
 };
-
-
 
 // Eliminar clase
 const eliminarClase = async (req, res) => {

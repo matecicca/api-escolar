@@ -1,21 +1,142 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>API REST</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-sRIl4kxILFvY47J16cr9ZwB07vP4J8+LH7qKQnuqkuIAvNWLzeN8tE5YBujZqJLB" crossorigin="anonymous">
-    <link rel="stylesheet" href="style.css">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Documentación API Escolar</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 20px;
+      line-height: 1.6;
+      background-color: #f9f9f9;
+      color: #333;
+    }
+    h1, h2, h3 {
+      color: #2c3e50;
+    }
+    code {
+      background: #eee;
+      padding: 2px 6px;
+      border-radius: 4px;
+    }
+    pre {
+      background: #eee;
+      padding: 10px;
+      border-radius: 4px;
+      overflow-x: auto;
+    }
+    section {
+      margin-bottom: 40px;
+    }
+    .endpoint {
+      margin: 5px 0;
+      padding: 8px;
+      background: #fff;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+    }
+    footer {
+      margin-top: 40px;
+      background: #222;
+      color: #ccc;
+      text-align: center;
+      padding: 15px;
+      font-size: 14px;
+    }
+  </style>
 </head>
 <body>
-    <header>
-        <h1>API REST DV</h1>
-    </header>
-    <main class="container">
-        <img src="infografia.png" alt="infografia" class="img-fluid">
-    </main>
-    <footer>
-        <p> DV | Aplicaciones Híbridas | 2025</p>
-    </footer>
+  <h1>📖 Documentación de la API Escolar</h1>
+  <p>Esta API gestiona <strong>Usuarios</strong>, <strong>Clases</strong> e <strong>Inscripciones</strong>.<br>
+  Todas las respuestas son en <code>JSON</code> y se recomienda enviar datos con <code>Content-Type: application/json</code>.</p>
+
+  <main>
+    <section>
+      <h2>👥 Usuarios (<code>/usuarios</code>)</h2>
+      <div class="endpoint">GET /usuarios → Listar todos los usuarios (con filtros)</div>
+      <div class="endpoint">GET /usuarios/:id → Obtener usuario por ID</div>
+      <div class="endpoint">POST /usuarios → Crear un nuevo usuario</div>
+      <div class="endpoint">PUT /usuarios/:id → Actualizar usuario existente</div>
+      <div class="endpoint">DELETE /usuarios/:id → Eliminar usuario</div>
+
+      <h3>Parámetros de filtrado</h3>
+      <ul>
+        <li><code>?tipo=alumno</code> → Solo alumnos</li>
+        <li><code>?tipo=docente</code> → Solo docentes</li>
+        <li><code>?nombre=&lt;texto&gt;</code> → Busca por nombre (parcial, insensible a mayúsculas, soporta espacios)</li>
+        <li>Combinable: <code>?tipo=alumno&nombre=sofia</code></li>
+      </ul>
+
+      <h3>Validaciones</h3>
+      <ul>
+        <li><code>tipo</code> debe ser <code>alumno</code> o <code>docente</code></li>
+        <li>Emails deben ser únicos</li>
+      </ul>
+    </section>
+
+    <section>
+      <h2>📚 Clases (<code>/clases</code>)</h2>
+      <div class="endpoint">GET /clases → Listar clases (con filtros)</div>
+      <div class="endpoint">GET /clases/:id → Obtener clase por ID</div>
+      <div class="endpoint">POST /clases → Crear clase</div>
+      <div class="endpoint">PUT /clases/:id → Actualizar clase</div>
+      <div class="endpoint">DELETE /clases/:id → Eliminar clase</div>
+
+      <h3>Parámetros de filtrado</h3>
+      <ul>
+        <li><code>?docente=&lt;id&gt;</code> → Filtra por ID de docente</li>
+        <li><code>?docente=&lt;email&gt;</code> → Filtra por email de docente</li>
+        <li><code>?nombre=&lt;texto&gt;</code> → Busca por nombre de clase (parcial, insensible a mayúsculas)</li>
+        <li>Combinable: <code>?docente=luis@example.com&nombre=mate</code></li>
+      </ul>
+
+      <h3>Validaciones</h3>
+      <ul>
+        <li><code>docente</code> debe ser un usuario existente con <code>tipo=docente</code></li>
+        <li><code>classCode</code> debe ser único y numérico</li>
+        <li>No se pueden crear más de <strong>15 clases</strong></li>
+      </ul>
+    </section>
+
+    <section>
+      <h2>📝 Inscripciones (<code>/inscripciones</code>)</h2>
+      <div class="endpoint">GET /inscripciones → Listar inscripciones (con filtros)</div>
+      <div class="endpoint">POST /inscripciones → Crear inscripción</div>
+      <div class="endpoint">DELETE /inscripciones/:id → Eliminar inscripción</div>
+
+      <h3>Parámetros de filtrado</h3>
+      <ul>
+        <li><code>?alumno=&lt;id&gt;</code> → Filtra por ID de alumno</li>
+        <li><code>?alumno=&lt;email&gt;</code> → Filtra por email de alumno</li>
+        <li><code>?clase=&lt;id&gt;</code> → Filtra por ID de clase</li>
+        <li><code>?clase=&lt;classCode&gt;</code> → Filtra por código de clase</li>
+        <li>Combinable: <code>?alumno=carla@example.com&clase=1</code></li>
+      </ul>
+
+      <h3>Validaciones</h3>
+      <ul>
+        <li><code>alumno</code> debe ser un usuario existente con <code>tipo=alumno</code></li>
+        <li><code>clase</code> debe ser una clase existente</li>
+        <li><strong>No se permiten inscripciones duplicadas</strong> (un alumno en la misma clase)</li>
+      </ul>
+    </section>
+
+    <section>
+      <h2>📌 Reglas Generales</h2>
+      <ul>
+        <li>Usar <strong>URL encoding</strong> para nombres con espacios (<code>Sofía%20Martínez</code>)</li>
+        <li>Respuestas en JSON con mensajes de error claros (400, 404, 500)</li>
+        <li>Filtros combinables para refinar resultados</li>
+      </ul>
+    </section>
+  </main>
+
+  <footer>
+    <p><strong>Alumno:</strong> [Tu Nombre y Apellido]</p>
+    <p><strong>Materia:</strong> Aplicaciones Híbridas</p>
+    <p><strong>Docente:</strong> CRUZ, Jonathan Emanuel & MARCOS GALBÁN, Camila Belén</p>
+    <p><strong>Comisión:</strong> A-1331</p>
+  </footer>
 </body>
 </html>

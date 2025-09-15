@@ -1,5 +1,5 @@
 {
-  "name": "sistema-gestion-educativa",
+  "name": "api-escolar",
   "version": "1.0.0",
   "description": "API REST con Node.js y Express para el manejo de un sistema de gestión educativa",
   "main": "index.js",
