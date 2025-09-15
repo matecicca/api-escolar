@@ -19,6 +19,13 @@ const claseSchema = new mongoose.Schema({
   fecha: {
     type: Date,
     required: [true, 'La fecha de la clase es obligatoria']
+  },
+  classCode: {
+    type: Number,
+    required: [true, 'El código de la clase es obligatorio'],
+    unique: true,
+    min: 1,
+    max: 15
   }
 }, {
   timestamps: true

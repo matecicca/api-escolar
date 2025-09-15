@@ -4,25 +4,34 @@ const mongoose = require('mongoose');
 const Usuario = require('../models/usuario.model.js');
 const Clase = require('../models/clase.model.js');
 
+// Crear clase
 const crearClase = async (req, res) => {
   try {
     let docenteId = req.body.docente;
 
-    // Si es un ObjectId válido, verificamos que exista y sea docente
+    // Validar docente (igual que antes)
     if (mongoose.Types.ObjectId.isValid(docenteId)) {
       const docente = await Usuario.findOne({ _id: docenteId, tipo: 'docente' });
-      if (!docente) {
-        return res.status(400).json({ mensaje: 'El docente no existe o no es válido' });
-      }
+      if (!docente) return res.status(400).json({ mensaje: 'El docente no existe o no es válido' });
     } else {
-      // Si no es ObjectId, asumimos que es un email
       const docente = await Usuario.findOne({ email: docenteId, tipo: 'docente' });
-      if (!docente) {
-        return res.status(400).json({ mensaje: 'El docente no existe o no es válido' });
-      }
+      if (!docente) return res.status(400).json({ mensaje: 'El docente no existe o no es válido' });
       docenteId = docente._id;
     }
 
+    // 🚨 Validar límite de clases
+    const totalClases = await Clase.countDocuments();
+    if (totalClases >= 15) {
+      return res.status(400).json({ mensaje: 'No hay espacio: ya existen 15 clases registradas' });
+    }
+
+    // 🚨 Validar que el classCode no esté repetido
+    const existeClassCode = await Clase.findOne({ classCode: req.body.classCode });
+    if (existeClassCode) {
+      return res.status(400).json({ mensaje: `El classCode ${req.body.classCode} ya está en uso` });
+    }
+
+    // Crear clase
     const nuevaClase = new Clase({
       ...req.body,
       docente: docenteId
@@ -34,6 +43,7 @@ const crearClase = async (req, res) => {
     res.status(400).json({ mensaje: error.message });
   }
 };
+
 
 
 
@@ -88,6 +98,7 @@ const actualizarClase = async (req, res) => {
   try {
     let docenteId = req.body.docente;
 
+    // 🔹 Validar docente si se envía uno nuevo
     if (docenteId) {
       if (mongoose.Types.ObjectId.isValid(docenteId)) {
         const docente = await Usuario.findOne({ _id: docenteId, tipo: 'docente' });
@@ -104,6 +115,18 @@ const actualizarClase = async (req, res) => {
       req.body.docente = docenteId;
     }
 
+    // 🔹 Validar que el nuevo classCode no esté repetido
+    if (req.body.classCode) {
+      const existeClassCode = await Clase.findOne({
+        classCode: req.body.classCode,
+        _id: { $ne: req.params.id } // 👈 excluir la clase que estamos actualizando
+      });
+      if (existeClassCode) {
+        return res.status(400).json({ mensaje: `El classCode ${req.body.classCode} ya está en uso` });
+      }
+    }
+
+    // Actualizar clase
     const clase = await Clase.findByIdAndUpdate(
       req.params.id,
       req.body,
@@ -111,11 +134,13 @@ const actualizarClase = async (req, res) => {
     ).populate('docente', 'nombre email tipo');
 
     if (!clase) return res.status(404).json({ mensaje: 'Clase no encontrada' });
+
     res.json(clase);
   } catch (error) {
     res.status(400).json({ mensaje: error.message });
   }
 };
+
 
 
 // Eliminar clase
