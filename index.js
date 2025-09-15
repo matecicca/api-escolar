@@ -26,6 +26,10 @@ app.use('/usuarios', usuariosRoutes);
 const clasesRoutes = require('./routes/clases.routes.js');
 app.use('/clases', clasesRoutes);
 
+const inscripcionesRoutes = require('./routes/inscripciones.routes.js');
+app.use('/inscripciones', inscripcionesRoutes);
+
+
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
   console.log(`🚀 Servidor corriendo en http://localhost:${PORT}`);

@@ -40,17 +40,21 @@ const crearClase = async (req, res) => {
 // Obtener todas las clases (con filtro opcional por docente)
 const getClases = async (req, res) => {
   try {
-    const { docente } = req.query; // 👈 leemos query param ?docente=<id|email>
+    const { docente } = req.query; // 👈 query param: ?docente=<id|email>
     let clases;
 
     if (docente) {
       let docenteId = docente;
 
-      // Si es un ObjectId válido, buscamos por _id
+      // Caso 1: si es un ObjectId válido
       if (mongoose.Types.ObjectId.isValid(docenteId)) {
+        const existeDocente = await Usuario.findOne({ _id: docenteId, tipo: 'docente' });
+        if (!existeDocente) {
+          return res.status(404).json({ mensaje: 'Docente no encontrado' });
+        }
         clases = await Clase.find({ docente: docenteId }).populate('docente', 'nombre email tipo');
       } else {
-        // Si no es ObjectId, lo tomamos como email
+        // Caso 2: si es un email
         const docenteEncontrado = await Usuario.findOne({ email: docente, tipo: 'docente' });
         if (!docenteEncontrado) {
           return res.status(404).json({ mensaje: 'Docente no encontrado' });
@@ -58,7 +62,7 @@ const getClases = async (req, res) => {
         clases = await Clase.find({ docente: docenteEncontrado._id }).populate('docente', 'nombre email tipo');
       }
     } else {
-      // Sin filtro → trae todas
+      // Si no se pasa parámetro → todas las clases
       clases = await Clase.find().populate('docente', 'nombre email tipo');
     }
 
@@ -67,6 +71,7 @@ const getClases = async (req, res) => {
     res.status(500).json({ mensaje: error.message });
   }
 };
+
 
 // Obtener una clase por ID con info del docente
 const getClaseById = async (req, res) => {
