@@ -1,5 +1,6 @@
 // controllers/usuarios.controller.js
 const Usuario = require('../models/usuario.model.js');
+const bcrypt = require('bcrypt');
 
 // Obtener todos los usuarios (con filtros por tipo y nombre)
 const getUsuarios = async (req, res) => {
@@ -37,7 +38,8 @@ const getUsuarioById = async (req, res) => {
 
 const crearUsuario = async (req, res) => {
   try {
-    const nuevoUsuario = new Usuario(req.body);
+    const passHash = bcrypt.hash(password, 5);
+    const nuevoUsuario = new Usuario(nombre, tipo, email, passHash);
     const usuarioGuardado = await nuevoUsuario.save();
     res.status(201).json(usuarioGuardado);
   } catch (error) {
