@@ -2,11 +2,13 @@
 const express = require('express');
 const router = express.Router();
 const controlador = require('../controllers/usuarios.controller.js');
+const validarToken = require('../middlewares/auth.js');
 
-router.get('/', controlador.getUsuarios);
+router.get('/', validarToken, controlador.getUsuarios);
 router.get('/:id', controlador.getUsuarioById);
 router.post('/', controlador.crearUsuario);
 router.put('/:id', controlador.actualizarUsuario);
 router.delete('/:id', controlador.eliminarUsuario);
+router.post('/auth', controlador.auth)
 
 module.exports = router;

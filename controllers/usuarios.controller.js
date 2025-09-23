@@ -1,6 +1,8 @@
 // controllers/usuarios.controller.js
+const { request, response, json } = require('express');
 const Usuario = require('../models/usuario.model.js');
 const bcrypt = require('bcrypt');
+const jwt = require('jsonwebtoken');
 
 // Obtener todos los usuarios (con filtros por tipo y nombre)
 const getUsuarios = async (req, res) => {
@@ -8,12 +10,10 @@ const getUsuarios = async (req, res) => {
     const { tipo, nombre } = req.query;
     let filtro = {};
 
-    // Filtro por tipo
     if (tipo) {
       filtro.tipo = tipo;
     }
 
-    // Filtro por nombre
     if (nombre) {
       filtro.nombre = new RegExp(nombre.trim(), 'i');
     }
@@ -36,10 +36,21 @@ const getUsuarioById = async (req, res) => {
   }
 };
 
+// Crear usuario con contraseña encriptada
 const crearUsuario = async (req, res) => {
   try {
-    const passHash = bcrypt.hash(password, 5);
-    const nuevoUsuario = new Usuario(nombre, tipo, email, passHash);
+    const { nombre, tipo, email, password } = req.body;
+
+    const salt = await bcrypt.genSalt(10);
+    const passHash = await bcrypt.hash(password, salt);
+
+    const nuevoUsuario = new Usuario({
+      nombre,
+      tipo,
+      email,
+      password: passHash
+    });
+
     const usuarioGuardado = await nuevoUsuario.save();
     res.status(201).json(usuarioGuardado);
   } catch (error) {
@@ -47,13 +58,22 @@ const crearUsuario = async (req, res) => {
   }
 };
 
+// Actualizar usuario (con hash si envían nueva contraseña)
 const actualizarUsuario = async (req, res) => {
   try {
+    const { password, ...resto } = req.body;
+
+    if (password) {
+      const salt = await bcrypt.genSalt(10);
+      resto.password = await bcrypt.hash(password, salt);
+    }
+
     const usuario = await Usuario.findByIdAndUpdate(
       req.params.id,
-      req.body,
+      resto,
       { new: true, runValidators: true }
     );
+
     if (!usuario) return res.status(404).json({ mensaje: 'Usuario no encontrado' });
     res.json(usuario);
   } catch (error) {
@@ -61,6 +81,7 @@ const actualizarUsuario = async (req, res) => {
   }
 };
 
+// Eliminar usuario
 const eliminarUsuario = async (req, res) => {
   try {
     const usuario = await Usuario.findByIdAndDelete(req.params.id);
@@ -71,10 +92,39 @@ const eliminarUsuario = async (req, res) => {
   }
 };
 
+// Autenticación de usuario
+const auth = async (req, res) => {
+  try {
+    const { email, password } = req.body;
+    const usuario = await Usuario.findOne({ email: email });
+
+    if (!usuario) {
+      return res.status(404).json({ msg: "Email inválido" });
+    }
+
+    const isValid = await bcrypt.compare(password, usuario.password);
+    if (!isValid) {
+      return res.status(401).json({ msg: "Contraseña incorrecta" });
+    }
+
+    const data = {
+      id: usuario._id,
+      email: usuario.email
+    };
+
+    const jwt = JsonWebTokenError.sign( data, SECRET_KEY, {expiresIn: '1h'})
+
+    res.status(200).json({ msg: "Autenticación exitosa", usuarioId: usuario._id });
+  } catch (error) {
+    res.status(500).json({ msg: error.message, jwt: jwt });
+  }
+};
+
 module.exports = {
   getUsuarios,
   getUsuarioById,
   crearUsuario,
   actualizarUsuario,
-  eliminarUsuario
+  eliminarUsuario,
+  auth
 };
