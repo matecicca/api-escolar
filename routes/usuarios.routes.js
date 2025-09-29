@@ -2,9 +2,9 @@
 const express = require('express');
 const router = express.Router();
 const controlador = require('../controllers/usuarios.controller.js');
-const validarToken = require('../middlewares/auth.js');
+const middleware = require('../middlewares/auth.js');
 
-router.get('/', validarToken, controlador.getUsuarios);
+router.get('/', middleware.validarToken, controlador.getUsuarios);
 router.get('/:id', controlador.getUsuarioById);
 router.post('/', controlador.crearUsuario);
 router.put('/:id', controlador.actualizarUsuario);

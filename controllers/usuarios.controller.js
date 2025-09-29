@@ -2,7 +2,11 @@
 const { request, response, json } = require('express');
 const Usuario = require('../models/usuario.model.js');
 const bcrypt = require('bcrypt');
-const jwt = require('jsonwebtoken');
+const jsonwebtoken = require('jsonwebtoken');
+const dotenv = require('dotenv');
+
+dotenv.config();
+const SECRET_KEY = process.env.SECRET_KEY
 
 // Obtener todos los usuarios (con filtros por tipo y nombre)
 const getUsuarios = async (req, res) => {
@@ -104,7 +108,7 @@ const auth = async (req, res) => {
 
     const isValid = await bcrypt.compare(password, usuario.password);
     if (!isValid) {
-      return res.status(401).json({ msg: "Contraseña incorrecta" });
+      return res.status(404).json({ msg: "Contraseña incorrecta" });
     }
 
     const data = {
@@ -112,9 +116,9 @@ const auth = async (req, res) => {
       email: usuario.email
     };
 
-    const jwt = JsonWebTokenError.sign( data, SECRET_KEY, {expiresIn: '1h'})
+    const jwt = jsonwebtoken.sign( data, SECRET_KEY, {expiresIn: '1h'})
 
-    res.status(200).json({ msg: "Autenticación exitosa", usuarioId: usuario._id });
+    res.status(200).json({ msg: "Autenticación exitosa", usuarioId: usuario._id, jwt: jwt });
   } catch (error) {
     res.status(500).json({ msg: error.message, jwt: jwt });
   }
